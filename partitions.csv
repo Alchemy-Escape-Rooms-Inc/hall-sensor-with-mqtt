@@ -1,0 +1,9 @@
+# Bootloader starts at 0x0 (not 0x1000; documentation for ESP32-S3 wrong), takes 0x8000 bytes
+# Partition table located at 0x8000, takes next 0x1000
+# Data partitions must be 0x1000 aligned
+# App partitions must be 0x10000 aligned
+
+# ESP-IDF Partition Table
+# Name, Type, SubType, Offset, Size, Flags
+nvs,data,nvs,0x9000,0x6000,,
+factory,app,factory,0x10000,6M,,

@@ -1,0 +1,91 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "preLaunchTask",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build",
+                "OpenOCD: Annihilate",
+                "OpenOCD: Flash",
+                // If you flash with openocd you need to start a new instance or the debug session will get hosed with multicore freertos
+                // Undocumented issue with ESP-IDF
+                "OpenOCD: Annihilate",
+                "OpenOCD: Start",
+            ]
+        },
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "${config:idf.pythonBinPath} ${config:idf.espIdfPath}/tools/idf.py build",
+            "windows": {
+                "command": "${config:idf.pythonBinPathWin} ${config:idf.espIdfPathWin}\\tools\\idf.py build",
+                "options": {
+                    "env": {
+                        "PATH": "${env:PATH};${config:idf.customExtraPaths}"
+                    }
+                }
+            },
+            "presentation": { "echo": true, "reveal": "always", "focus": true, "panel": "dedicated", "close": false, "group": "debugbuild" },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "OpenOCD: Annihilate",
+            "type": "shell",
+            "presentation": { "echo": true, "reveal": "always", "focus": false, "panel": "shared", "close": true, },
+            "command": "",
+            "windows":{
+                "command": "taskkill /F /IM openocd.exe ; exit 0"
+            }
+        },
+        {
+            "label": "OpenOCD: Flash",
+            "type": "shell",
+            "presentation": { "echo": true, "reveal": "always", "focus": true, "panel": "shared", "close": false, "group": "debugbuild" },
+            "command": "${workspaceFolder}/flash.bat",
+            "args": ["${command:espIdf.getProjectName}.bin"],
+            "options": {
+                "env": {
+                    "PATH": "${env:PATH};${config:idf.customExtraVars.openocdPath}",
+                }
+            }
+        },
+        {
+            "label": "OpenOCD: Start",
+            "type": "shell",
+            "presentation": { "echo": true, "reveal": "always", "focus": true, "panel": "shared", "close": false, "group": "debugbuild", },
+            "command": "openocd -d2 -s ${command:espIdf.getOpenOcdScriptValue} ${command:espIdf.getOpenOcdConfigs}",
+            "windows": {
+                "command": "TIMEOUT -T 3; openocd.exe -d2 -s ${command:espIdf.getOpenOcdScriptValue} ${command:espIdf.getOpenOcdConfigs}",
+                "options": {
+                    "env": {
+                        "PATH": "${env:PATH};${config:idf.customExtraVars.openocdPath}"
+                    }
+                }
+            },
+            "options": {
+                "env": {
+                    "PATH": "${env:PATH}:${config:idf.customExtraVars.openocdPath}"
+                }
+            },
+            "isBackground": true,
+            "problemMatcher": [ { "pattern": [ { "regexp": ".", "file": 1, "location": 2, "message": 3 } ], "background": { "activeOnStart": true, "beginsPattern": ".", "endsPattern": ".", } } ]
+        },
+        {
+            "label": "Terminate All Tasks",
+            "command": "echo ${input:terminate}",
+            "type": "shell",
+        }
+    ],
+    "inputs": [
+      {
+        "id": "terminate",
+        "type": "command",
+        "command": "workbench.action.tasks.terminate",
+        "args": "terminateAll"
+      }
+    ]
+}

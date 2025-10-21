@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "preLaunchTask": "preLaunchTask",
+      "postDebugTask": "Terminate All Tasks",
+      "name": "ESP32 OpenOCD",
+      "type": "cppdbg",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/build",
+      "program": "${workspaceFolder}/build/${command:espIdf.getProjectName}.elf",
+      "miDebuggerPath": "${config:idf.customExtraVars.debuggerPath}",
+      "externalConsole":true,
+      "internalConsoleOptions": "neverOpen",
+      "useExtendedRemote": true,
+      
+      "setupCommands": [
+        {"text": "set remotetimeout 3"},
+        {"text": "target remote :3333"},
+        {"text": "mon reset halt"},
+      // {"text": "flushregs"},
+      ],
+    }
+  ]
+}
