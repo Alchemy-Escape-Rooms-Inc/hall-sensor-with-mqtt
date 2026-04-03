@@ -63,6 +63,17 @@ bool read(uint8_t address, uint8_t* sendData, size_t sendLen, uint8_t* recvData,
     return (ret == ESP_OK);
 }
 
+bool writeNoAck(uint8_t address, uint8_t* data, size_t len) {
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (address << 1) | I2C_MASTER_WRITE, false);  // no ACK check
+    i2c_master_write(cmd, data, len, false);  // no ACK check
+    i2c_master_stop(cmd);
+    esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(1000));
+    i2c_cmd_link_delete(cmd);
+    return (ret == ESP_OK);
+}
+
 bool registerDevice(uint8_t address) { return true; }
 bool unregisterDevice(uint8_t address) { return true; }
 bool changeAddress(uint8_t oldAddr, uint8_t newAddr) { return true; }
