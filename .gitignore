@@ -1,2 +1,4 @@
-/build
+build/
 .claude/settings.local.json
+build_and_flash.bat
+build_output.log

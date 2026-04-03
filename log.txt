@@ -1,0 +1,66 @@
+=== Session: 2026-04-03 - Hall Sensor Address Programming ===
+
+FILES REVIEWED:
+- program_sensor.bat (address programming batch script)
+- address_programmer/main/main.cpp (programmer firmware)
+- address_programmer/main/i2c.cpp (I2C driver)
+- address_programmer/main/target_address.h (target address config)
+- main/peripherals/pins.h (pin definitions for main project)
+
+CHANGES MADE:
+- Fixed GPIO pins in address_programmer/main/i2c.cpp:
+  - Changed I2C_MASTER_SDA_IO from GPIO_NUM_21 to GPIO_NUM_15
+  - Changed I2C_MASTER_SCL_IO from GPIO_NUM_22 to GPIO_NUM_18
+  (ESP32-S3 doesn't have GPIO 22; pins now match main project's pins.h)
+
+BUILD & FLASH PROCESS:
+- program_sensor.bat does NOT work from Git Bash or non-CMD environments
+- ESP-IDF's idf.py has an if/elif/else in __main__ (line ~914) that checks for
+  MSYSTEM env var. When present (always set in Git Bash/MSYS2), it prints a
+  warning and NEVER calls main() — the build silently does nothing.
+- Workaround: invoke idf.py via Python subprocess with MSYSTEM removed:
+
+    python.exe -c "
+    import os, subprocess, sys
+    env = os.environ.copy()
+    env.pop('MSYSTEM', None)
+    env['IDF_PATH'] = r'C:\Espressif\frameworks\esp-idf-v5.5.4'
+    env['IDF_PYTHON_ENV_PATH'] = r'C:\Espressif\python_env\idf5.5_py3.13_env'
+    env['VIRTUAL_ENV'] = r'C:\Espressif\python_env\idf5.5_py3.13_env'
+    env['IDF_TOOLS_PATH'] = r'C:\Espressif'
+    extra_paths = [
+        r'C:\Espressif\python_env\idf5.5_py3.13_env\Scripts',
+        r'C:\Espressif\tools\cmake\3.30.2\bin',
+        r'C:\Espressif\tools\ninja\1.12.1',
+        r'C:\Espressif\tools\xtensa-esp-elf\esp-14.2.0_20260121\xtensa-esp-elf\bin',
+        r'C:\Espressif\tools\riscv32-esp-elf\esp-14.2.0_20260121\riscv32-esp-elf\bin',
+        r'C:\Espressif\tools\idf-exe\1.0.3',
+    ]
+    env['PATH'] = ';'.join(extra_paths) + ';' + env.get('PATH', '')
+    result = subprocess.run(
+        [sys.executable, r'C:\Espressif\frameworks\esp-idf-v5.5.4\tools\idf.py', 'build'],
+        env=env
+    )
+    sys.exit(result.returncode)
+    "
+
+- For flashing, same approach but with: idf.py -p COM6 flash
+- PATH must use Windows-style semicolons (;) not colons (:)
+- Tool paths must match versions installed on this machine:
+    cmake 3.30.2, ninja 1.12.1, xtensa-esp-elf esp-14.2.0_20260121
+
+RESULTS:
+- Sensor scanned and found at 0x60 (Sensor #0)
+- Sensor was ALREADY at target address 0x60 - no reprogramming needed
+- Status: SUCCESS - ALREADY CONFIGURED
+
+KNOWN ISSUES:
+- ESP-IDF idf.py cannot run from Git Bash directly (MSYSTEM env var blocks main())
+- address_programmer had wrong GPIO pins for ESP32-S3 (was using ESP32 pins 21/22)
+- program_sensor.bat only works from native Windows CMD (ESP-IDF Command Prompt)
+
+NOTES:
+- ESP32-S3 target chip (confirmed from sdkconfig)
+- I2C pins: SDA=GPIO15, SCL=GPIO18
+- Address programmer supports slots 0-7 mapping to addresses 0x60-0x67
+- After programming a new address, sensor must be power cycled
